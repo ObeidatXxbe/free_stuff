@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>QR Safety Quiz</title>
 
-  <!-- ✅ Supabase JS (required for shared scoreboard) -->
+  <!-- Supabase JS (shared scoreboard) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
@@ -68,7 +68,6 @@
     table{width:100%; border-collapse:collapse; margin-top:10px}
     th,td{padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left}
     th{color:var(--title2); font-weight:800}
-    .note{font-size:0.9rem;color:rgba(252,236,238,0.65);margin-top:10px}
     @media (max-width:640px){ .top{gap:8px} }
   </style>
 </head>
@@ -112,12 +111,23 @@
   </div>
 
   <script>
-    // ✅ Put your Supabase public keys here
+    // =========================
+    // Supabase (SAFE INIT)
+    // =========================
     const SUPABASE_URL = "https://fagdpkcckpyhmmgmaqik.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_w3_sZUpV1LsChEuJGVWRnw_NLk17WPs";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ---- Quiz questions (edit these freely) ----
+    // If Supabase CDN fails or is blocked, we don't want the whole quiz to break.
+    let supabaseClient = null;
+    try {
+      supabaseClient = window.supabase?.createClient?.(SUPABASE_URL, SUPABASE_ANON_KEY) || null;
+    } catch (e) {
+      supabaseClient = null;
+    }
+
+    // =========================
+    // Quiz questions
+    // =========================
     const QUIZ = [
       {
         q: "What is the safest first step after scanning an unknown QR?",
@@ -165,6 +175,9 @@
       }
     ];
 
+    // =========================
+    // DOM
+    // =========================
     const nameInput = document.getElementById("name");
     const startBtn = document.getElementById("startBtn");
     const quizCard = document.getElementById("quizCard");
@@ -216,9 +229,9 @@
       });
     }
 
-    // ✅ Selection does NOT reveal correct answer until submit
+    // Selection does NOT reveal correct answers until submit
     function select(qIndex, choice, btn, container){
-      if (revealed) return; // lock answers after reveal
+      if (revealed) return;
 
       answers[qIndex] = choice;
 
@@ -231,7 +244,7 @@
       const exp = container.querySelector(`#exp-${qIndex}`);
       exp.textContent = "";
 
-      updateScore(); // optional live score
+      updateScore();
     }
 
     function updateScore(){
@@ -240,7 +253,6 @@
       return score;
     }
 
-    // ✅ Reveal correct answers + explanation after submit
     function revealAll(){
       revealed = true;
 
@@ -265,9 +277,13 @@
       });
     }
 
-    // ✅ Shared scoreboard via Supabase
+    // =========================
+    // Shared scoreboard via Supabase
+    // =========================
     async function saveScore(name, score){
-      const { error } = await supabase
+      if(!supabaseClient) return; // don't break quiz if Supabase didn't load
+
+      const { error } = await supabaseClient
         .from("scores")
         .insert([{ name, score, total: QUIZ.length }]);
 
@@ -275,9 +291,14 @@
     }
 
     async function loadBoard(){
+      if(!supabaseClient){
+        boardEl.innerHTML = `<p class="muted">Leaderboard unavailable (Supabase didn’t load). The quiz still works.</p>`;
+        return;
+      }
+
       boardEl.innerHTML = `<p class="muted">Loading leaderboard…</p>`;
 
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from("scores")
         .select("name, score, total, created_at")
         .order("score", { ascending: false })
@@ -313,6 +334,9 @@
       `;
     }
 
+    // =========================
+    // Events
+    // =========================
     startBtn.addEventListener("click", () => {
       const name = sanitizeName(nameInput.value);
       if(!name){
@@ -334,6 +358,11 @@
       quizCard.scrollIntoView({ behavior: "smooth", block: "start" });
     });
 
+    // Press Enter in nickname box to start
+    nameInput.addEventListener("keydown", (e) => {
+      if(e.key === "Enter") startBtn.click();
+    });
+
     finishBtn.addEventListener("click", async () => {
       const name = sanitizeName(nameInput.value);
       if(!name){
@@ -349,7 +378,6 @@
       }
 
       revealAll();
-
       const score = updateScore();
 
       try{
@@ -372,7 +400,7 @@
       renderQuestions();
     });
 
-    // load shared leaderboard on page load
+    // Load shared leaderboard on page load
     loadBoard();
   </script>
 </body>
