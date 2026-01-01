@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>QR Safety Quiz</title>
+  <style>
+    :root{
+      --bg:#120205; --card:rgba(135,7,28,0.12); --card2:rgba(135,7,28,0.18);
+      --border:rgba(135,7,28,0.35); --text:#fcecee; --muted:rgba(252,236,238,0.82);
+      --title:#ff4d6d; --title2:#ff8fa3; --accent:#87071c; --accent2:#a50922;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:system-ui,-apple-system,sans-serif; color:var(--text);
+      background: radial-gradient(1200px 500px at 20% 0%, rgba(135,7,28,0.35), transparent 60%),
+                  radial-gradient(900px 500px at 100% 20%, rgba(135,7,28,0.22), transparent 55%),
+                  var(--bg);
+    }
+    .wrap{max-width:980px;margin:0 auto;padding:44px 20px 70px}
+    .top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    h1{margin:0;color:var(--title);font-size:clamp(1.7rem,3vw,2.3rem);line-height:1.15}
+    p{margin:10px 0;color:var(--muted)}
+    .card{
+      background:var(--card); border:1px solid var(--border); border-radius:18px;
+      padding:22px; margin-top:18px; backdrop-filter:blur(6px)
+    }
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    input{
+      padding:12px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.05); color:var(--text); min-width:220px;
+      outline:none;
+    }
+    input:focus{border-color:rgba(255,255,255,0.25)}
+    .btn{
+      display:inline-block; background:var(--accent); color:#fff; padding:12px 18px;
+      border-radius:12px; text-decoration:none; font-weight:800; border:1px solid rgba(255,255,255,0.12);
+      cursor:pointer;
+    }
+    .btn:hover{background:var(--accent2)}
+    .btn-ghost{
+      display:inline-block; padding:12px 18px; border-radius:12px; text-decoration:none;
+      font-weight:800; color:var(--text);
+      background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.14);
+    }
+    .btn-ghost:hover{background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.22)}
+    .q{
+      background:var(--card2); border:1px solid rgba(135,7,28,0.45); border-radius:16px;
+      padding:16px; margin-top:14px;
+    }
+    .q h2{margin:0 0 10px;color:var(--title2);font-size:1.1rem}
+    .opt{
+      width:100%; text-align:left; padding:12px 12px; border-radius:12px;
+      border:1px solid rgba(255,255,255,0.14); background:rgba(255,255,255,0.05);
+      color:var(--text); cursor:pointer; margin:8px 0; font-weight:650;
+      transition: transform .15s, background .15s, border-color .15s;
+    }
+    .opt:hover{background:rgba(135,7,28,0.22); border-color:rgba(255,255,255,0.22); transform: translateY(-1px);}
+    .ok{border-color:rgba(34,197,94,0.8)!important; background:rgba(34,197,94,0.12)!important}
+    .bad{border-color:rgba(239,68,68,0.8)!important; background:rgba(239,68,68,0.12)!important}
+    .picked{outline:2px solid rgba(255,255,255,0.22);}
+    .muted{color:var(--muted); font-size:0.95rem}
+    table{width:100%; border-collapse:collapse; margin-top:10px}
+    th,td{padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left}
+    th{color:var(--title2); font-weight:800}
+    .note{font-size:0.9rem;color:rgba(252,236,238,0.65);margin-top:10px}
+    @media (max-width:640px){ .top{gap:8px} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>QR & Link Safety Quiz</h1>
+        <p class="muted">Nickname is only saved on this device (no login, no server).</p>
+      </div>
+      <a class="btn-ghost" href="index.html">← Back</a>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <label for="name" class="muted" style="font-weight:700;">Enter a nickname:</label>
+        <input id="name" maxlength="18" placeholder="e.g., Obeidat" />
+        <button class="btn" id="startBtn" type="button">Start quiz</button>
+      </div>
+      <div class="note">Tip: Don’t use your real full name if you’re posting this publicly.</div>
+    </div>
+
+    <div class="card" id="quizCard" style="display:none;">
+      <div class="row" style="justify-content:space-between;">
+        <div class="muted"><span id="playerLabel"></span> • Score: <b id="score">0</b>/<span id="total">0</span></div>
+        <button class="btn-ghost" id="resetBtn" type="button">Reset</button>
+      </div>
+
+      <div id="questions"></div>
+
+      <div class="row" style="margin-top:14px;">
+        <button class="btn" id="finishBtn" type="button">Finish & Save Score</button>
+      </div>
+
+      <p id="msg" class="muted" style="margin-top:12px;"></p>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 10px;color:var(--title2);">Local scoreboard</h2>
+      <p class="muted" style="margin:0;">This scoreboard is stored in your browser (per device). For a shared scoreboard, you’d need a backend.</p>
+      <div id="board"></div>
+    </div>
+  </div>
+
+  <script>
+    // ---- Quiz questions (edit these freely) ----
+    const QUIZ = [
+      {
+        q: "What is the safest first step after scanning an unknown QR?",
+        options: [
+          "Open the link immediately",
+          "Preview the URL and check the domain",
+          "Share it with friends to confirm",
+          "Turn off Wi-Fi and open it"
+        ],
+        correct: 1,
+        explain: "Previewing the URL and checking the domain helps you spot look-alikes and short links."
+      },
+      {
+        q: "Which link is the biggest red flag?",
+        options: [
+          "https://portal.university.edu",
+          "https://uni.edu/events",
+          "https://bit.ly/Verify-Uni-Now",
+          "https://library.university.edu"
+        ],
+        correct: 2,
+        explain: "Shortened links can hide the real destination. Be extra cautious."
+      },
+      {
+        q: "A QR page instantly asks you to install an app to continue. What should you do?",
+        options: [
+          "Install it and delete later",
+          "Close the page and don’t install anything",
+          "Install if it has a logo",
+          "Restart your phone then install"
+        ],
+        correct: 1,
+        explain: "Unexpected app installs from QR scans are a common malware route."
+      },
+      {
+        q: "HTTPS (the lock icon) means…",
+        options: [
+          "The site is definitely trustworthy",
+          "The connection is encrypted, but the site could still be a scam",
+          "The site is owned by your university",
+          "The site is virus-free"
+        ],
+        correct: 1,
+        explain: "HTTPS encrypts the connection, but scammers can also use HTTPS."
+      }
+    ];
+
+    const nameInput = document.getElementById("name");
+    const startBtn = document.getElementById("startBtn");
+    const quizCard = document.getElementById("quizCard");
+    const questionsEl = document.getElementById("questions");
+    const scoreEl = document.getElementById("score");
+    const totalEl = document.getElementById("total");
+    const playerLabel = document.getElementById("playerLabel");
+    const finishBtn = document.getElementById("finishBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const msg = document.getElementById("msg");
+    const boardEl = document.getElementById("board");
+
+    totalEl.textContent = QUIZ.length;
+
+    let answers = new Array(QUIZ.length).fill(null);
+    let revealed = false;
+
+    function sanitizeName(s){
+      return (s || "").trim().replace(/\s+/g," ").slice(0,18);
+    }
+
+    function renderQuestions(){
+      questionsEl.innerHTML = "";
+      QUIZ.forEach((item, i) => {
+        const div = document.createElement("div");
+        div.className = "q";
+        div.innerHTML = `
+          <h2>Q${i+1}. ${item.q}</h2>
+          <div id="opts-${i}"></div>
+          <div class="muted" id="exp-${i}" style="margin-top:8px;"></div>
+        `;
+        questionsEl.appendChild(div);
+
+        const opts = div.querySelector(`#opts-${i}`);
+        item.options.forEach((opt, idx) => {
+          const btn = document.createElement("button");
+          btn.className = "opt";
+          btn.type = "button";
+          btn.textContent = opt;
+          btn.addEventListener("click", () => select(i, idx, btn, div));
+          opts.appendChild(btn);
+        });
+      });
+    }
+
+    // ✅ Selection does NOT reveal correct answer until submit
+    function select(qIndex, choice, btn, container){
+      if (revealed) return; // lock answers after reveal
+
+      answers[qIndex] = choice;
+
+      // Clear styles for this question
+      container.querySelectorAll(".opt").forEach(b => {
+        b.classList.remove("ok","bad","picked");
+      });
+
+      // Neutral highlight for the chosen option
+      btn.classList.add("picked");
+
+      // No explanation yet
+      const exp = container.querySelector(`#exp-${qIndex}`);
+      exp.textContent = "";
+
+      // Optional: keep live score counting (you can remove this if you want)
+      updateScore();
+    }
+
+    function updateScore(){
+      const score = answers.reduce((acc, a, i) => acc + (a === QUIZ[i].correct ? 1 : 0), 0);
+      scoreEl.textContent = score;
+      return score;
+    }
+
+    // ✅ Reveal correct answers + explanation after submit
+    function revealAll(){
+      revealed = true;
+
+      QUIZ.forEach((item, i) => {
+        const qBox = document.querySelectorAll(".q")[i];
+        if(!qBox) return;
+
+        const opts = qBox.querySelectorAll(".opt");
+        const exp = qBox.querySelector(`#exp-${i}`);
+        const correct = item.correct;
+        const chosen = answers[i];
+
+        // Reset styles
+        opts.forEach(b => b.classList.remove("ok","bad","picked"));
+
+        // Highlight correct answer
+        if(opts[correct]) opts[correct].classList.add("ok");
+
+        // Highlight user's wrong choice
+        if(chosen !== null && chosen !== correct && opts[chosen]) {
+          opts[chosen].classList.add("bad");
+        }
+
+        // Show explanation
+        exp.textContent = (chosen === correct ? "✅ " : "⚠️ ") + item.explain;
+      });
+    }
+
+    function loadBoard(){
+      const raw = localStorage.getItem("qr_quiz_scores");
+      let data = [];
+      try { data = raw ? JSON.parse(raw) : []; } catch(e){ data = []; }
+
+      data.sort((a,b) => (b.score - a.score) || (b.time - a.time));
+      data = data.slice(0, 10);
+
+      if(data.length === 0){
+        boardEl.innerHTML = `<p class="muted">No scores yet on this device. Finish the quiz to add one.</p>`;
+        return;
+      }
+
+      const rows = data.map((x, idx) => `
+        <tr>
+          <td>${idx+1}</td>
+          <td>${escapeHtml(x.name)}</td>
+          <td><b>${x.score}</b> / ${QUIZ.length}</td>
+          <td class="muted">${new Date(x.time).toLocaleString()}</td>
+        </tr>
+      `).join("");
+
+      boardEl.innerHTML = `
+        <table>
+          <thead><tr><th>#</th><th>Nickname</th><th>Score</th><th>When</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    function saveScore(name, score){
+      const raw = localStorage.getItem("qr_quiz_scores");
+      let data = [];
+      try { data = raw ? JSON.parse(raw) : []; } catch(e){ data = []; }
+
+      data.push({ name, score, time: Date.now() });
+      localStorage.setItem("qr_quiz_scores", JSON.stringify(data));
+    }
+
+    function escapeHtml(s){
+      return (s || "").replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      })[c]);
+    }
+
+    startBtn.addEventListener("click", () => {
+      const name = sanitizeName(nameInput.value);
+      if(!name){
+        alert("Please enter a nickname.");
+        return;
+      }
+
+      playerLabel.textContent = `Player: ${name}`;
+      quizCard.style.display = "block";
+
+      msg.textContent = "";
+      msg.style.color = "";
+
+      revealed = false;
+      answers = new Array(QUIZ.length).fill(null);
+      scoreEl.textContent = "0";
+
+      renderQuestions();
+      quizCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    finishBtn.addEventListener("click", () => {
+      const name = sanitizeName(nameInput.value);
+      if(!name){
+        alert("Please enter a nickname.");
+        return;
+      }
+
+      const unanswered = answers.some(a => a === null);
+      if(unanswered){
+        msg.textContent = "Answer all questions before saving your score.";
+        msg.style.color = "#f87171";
+        return;
+      }
+
+      // ✅ reveal answers only now
+      revealAll();
+
+      const score = updateScore();
+      saveScore(name, score);
+      loadBoard();
+
+      msg.textContent = `Saved! ${name} scored ${score}/${QUIZ.length}.`;
+      msg.style.color = "#4ade80";
+    });
+
+    resetBtn.addEventListener("click", () => {
+      revealed = false;
+      answers = new Array(QUIZ.length).fill(null);
+      scoreEl.textContent = "0";
+      msg.textContent = "";
+      msg.style.color = "";
+      renderQuestions();
+    });
+
+    loadBoard();
+  </script>
+</body>
+</html>
