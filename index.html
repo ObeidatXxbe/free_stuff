@@ -5,35 +5,109 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>QR & Link Safety</title>
   <style>
-    body { font-family: system-ui, Arial; margin:0; background:#0b0f1a; color:#eef2ff; }
-    .wrap { max-width: 900px; margin: 0 auto; padding: 28px 18px 60px; }
-    .card { background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
-            border-radius: 18px; padding: 18px; margin-top: 14px; }
-    h1 { font-size: 2rem; margin: 10px 0 6px; }
-    h2 { font-size: 1.25rem; margin: 0 0 10px; }
-    p { line-height: 1.5; opacity: 0.92; }
-    .btn { display:inline-block; background:#7c3aed; color:white; padding: 12px 14px;
-           border-radius: 12px; text-decoration:none; font-weight: 650; margin-top: 10px; }
-    .grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 12px; }
-    .pill { display:inline-block; padding: 6px 10px; border-radius: 999px;
-            background: rgba(124,58,237,0.18); border:1px solid rgba(124,58,237,0.35); }
-    ol { margin: 10px 0 0 20px; }
-    li { margin: 8px 0; }
-    .small { font-size: 0.92rem; opacity: 0.85; }
-    .quiz button { width:100%; text-align:left; padding:12px; border-radius:12px;
-                   border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.05);
-                   color:#eef2ff; cursor:pointer; }
-    .quiz button:hover { background:rgba(255,255,255,0.08); }
-    .ok { border-color: rgba(34,197,94,0.6) !important; }
-    .bad { border-color: rgba(239,68,68,0.6) !important; }
+    /* Theme Color: #87071c */
+    body { 
+      font-family: system-ui, -apple-system, sans-serif; 
+      margin:0; 
+      background: #1a0205; /* Very dark version of your theme color for background */
+      color: #fcecee; 
+      line-height: 1.6;
+    }
+    
+    .wrap { max-width: 900px; margin: 0 auto; padding: 40px 20px; position: relative; }
+
+    /* Header Section with Bunny */
+    .header-flex { 
+      display: flex; 
+      align-items: center; 
+      gap: 30px; 
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+    
+    .bunny-img {
+      width: 180px;
+      height: auto;
+      filter: drop-shadow(0 0 15px rgba(135, 7, 28, 0.4));
+      border-radius: 20px;
+    }
+
+    .header-text { flex: 1; min-width: 300px; }
+
+    .card { 
+      background: rgba(135, 7, 28, 0.1); 
+      border: 1px solid rgba(135, 7, 28, 0.3);
+      border-radius: 18px; 
+      padding: 24px; 
+      margin-top: 20px; 
+      backdrop-filter: blur(5px);
+    }
+
+    h1 { font-size: 2.5rem; margin: 0 0 10px; color: #ff4d6d; }
+    h2 { font-size: 1.4rem; margin: 0 0 15px; color: #ff8fa3; border-bottom: 1px solid rgba(135, 7, 28, 0.3); padding-bottom: 8px; }
+    
+    .btn { 
+      display: inline-block; 
+      background: #87071c; 
+      color: white; 
+      padding: 14px 24px;
+      border-radius: 12px; 
+      text-decoration: none; 
+      font-weight: 700; 
+      margin-top: 15px;
+      transition: transform 0.2s, background 0.2s;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .btn:hover { background: #a50922; transform: translateY(-2px); }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+    .grid .card { margin-top: 0; background: rgba(135, 7, 28, 0.15); padding: 15px; }
+
+    .pill { 
+      display: inline-block; 
+      padding: 6px 14px; 
+      border-radius: 999px;
+      background: rgba(135, 7, 28, 0.4); 
+      border: 1px solid #87071c; 
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    ol { margin: 15px 0 0 20px; }
+    li { margin: 10px 0; }
+    .small { font-size: 0.92rem; opacity: 0.8; }
+
+    .quiz button { 
+      width: 100%; text-align: left; padding: 14px; border-radius: 12px;
+      border: 1px solid rgba(135, 7, 28, 0.4); 
+      background: rgba(255, 255, 255, 0.05);
+      color: #eef2ff; cursor: pointer; margin-bottom: 10px;
+      transition: all 0.2s;
+    }
+    .quiz button:hover { background: rgba(135, 7, 28, 0.2); border-color: #87071c; }
+    
+    .ok { border-color: #22c55e !important; background: rgba(34, 197, 94, 0.1) !important; }
+    .bad { border-color: #ef4444 !important; background: rgba(239, 68, 68, 0.1) !important; }
+
+    @media (max-width: 600px) {
+      .header-flex { flex-direction: column; text-align: center; }
+      .bunny-img { width: 140px; }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="pill">No login • No data collection</div>
-    <h1>Pause — you scanned an unknown QR code.</h1>
-    <p>QR codes can hide links. The risky part is that you often don’t see the real destination until it’s too late.</p>
-    <a class="btn" href="#checklist">Show me the 10-second safety check</a>
+    
+    <div class="header-flex">
+      <img src="bunny.jpg" alt="Knight Bunny" class="bunny-img">
+      <div class="header-text">
+        <div class="pill">No login • No data collection</div>
+        <h1>Pause — you scanned an unknown QR code.</h1>
+        <p>QR codes can hide links. The risky part is that you often don’t see the real destination until it’s too late.</p>
+        <a class="btn" href="#checklist">Show me the 10-second safety check</a>
+      </div>
+    </div>
 
     <div id="checklist" class="card">
       <h2>The 10-second safety check</h2>
@@ -75,7 +149,7 @@
       <button onclick="pick(this,false)">https://universty-portal.com/login</button>
       <button onclick="pick(this,false)">https://bit.ly/Uni-Verify-Now</button>
       <button onclick="pick(this,true)">https://portal.university.edu</button>
-      <p id="result" class="small"></p>
+      <p id="result" class="small" style="margin-top:15px; font-weight:bold;"></p>
     </div>
 
     <div class="card">
@@ -94,6 +168,12 @@
       document.getElementById('result').textContent =
         ok ? "✅ Correct — the real domain is clear and not shortened."
            : "⚠️ Risky — look-alike domains and shortened links can hide the real destination.";
+      
+      if(ok) {
+          document.getElementById('result').style.color = "#4ade80";
+      } else {
+          document.getElementById('result').style.color = "#f87171";
+      }
     }
   </script>
 </body>
