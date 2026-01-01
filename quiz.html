@@ -31,14 +31,14 @@
       margin:0;
       font-family:system-ui,-apple-system,sans-serif;
       color:var(--text);
-      background:transparent; /* important */
+      background:transparent;
     }
 
     .wrap{
       max-width:980px;
       margin:0 auto;
       padding:44px 20px 70px;
-      min-height:100vh; /* ✅ ensures page always fills viewport */
+      min-height:100vh;
     }
 
     .top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
@@ -68,6 +68,7 @@
       cursor:pointer;
     }
     .btn-ghost:hover{background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.22)}
+
     .q{
       background:var(--card2); border:1px solid rgba(135,7,28,0.45); border-radius:16px;
       padding:16px; margin-top:14px;
@@ -82,34 +83,32 @@
     .opt:hover{background:rgba(135,7,28,0.22); border-color:rgba(255,255,255,0.22); transform: translateY(-1px);}
     .ok{border-color:rgba(34,197,94,0.8)!important; background:rgba(34,197,94,0.12)!important}
     .bad{border-color:rgba(239,68,68,0.8)!important; background:rgba(239,68,68,0.12)!important}
+
     /* ✅ Tech / cyber highlight for selected answer */
-.picked{
-  outline: none;
-  border-color: rgba(56, 189, 248, 0.95) !important; /* cyan */
-  background: rgba(56, 189, 248, 0.12) !important;
-  box-shadow:
-    0 0 0 2px rgba(56, 189, 248, 0.35),
-    0 10px 22px rgba(0,0,0,0.28);
-}
-
-/* visible marker so selection is obvious */
-.picked::before{
-  content:"";
-  display:inline-block;
-  width:10px;
-  height:10px;
-  margin-right:10px;
-  border-radius:999px;
-  background: rgba(56, 189, 248, 0.95);
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
-  vertical-align: middle;
-}
+    .picked{
+      outline:none;
+      border-color: rgba(56, 189, 248, 0.95) !important;
+      background: rgba(56, 189, 248, 0.12) !important;
+      box-shadow:
+        0 0 0 2px rgba(56, 189, 248, 0.35),
+        0 10px 22px rgba(0,0,0,0.28);
+    }
+    .picked::before{
+      content:"";
+      display:inline-block;
+      width:10px;
+      height:10px;
+      margin-right:10px;
+      border-radius:999px;
+      background: rgba(56, 189, 248, 0.95);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+      vertical-align: middle;
+    }
     .opt.picked:hover{
-  background: rgba(56, 189, 248, 0.12) !important;
-  border-color: rgba(56, 189, 248, 0.95) !important;
-  transform: none;
-}
-
+      background: rgba(56, 189, 248, 0.12) !important;
+      border-color: rgba(56, 189, 248, 0.95) !important;
+      transform:none;
+    }
 
     .muted{color:var(--muted); font-size:0.95rem}
     table{width:100%; border-collapse:collapse; margin-top:10px}
@@ -138,7 +137,8 @@
 
     <div class="card" id="quizCard" style="display:none;">
       <div class="row" style="justify-content:space-between;">
-        <div class="muted"><span id="playerLabel"></span> • Score: <b id="score">0</b>/<span id="total">0</span></div>
+        <!-- ✅ Score hidden until submit -->
+        <div class="muted"><span id="playerLabel"></span> • Score: <b id="score">—</b>/<span id="total">0</span></div>
         <button class="btn-ghost" id="resetBtn" type="button">Reset</button>
       </div>
 
@@ -308,7 +308,7 @@
         const exp = container.querySelector(`#exp-${qIndex}`);
         exp.textContent = "";
 
-        updateScore();
+        // ✅ DO NOT updateScore() here (score stays hidden until submit)
       }
 
       function updateScore(){
@@ -403,7 +403,7 @@
 
         revealed = false;
         answers = new Array(QUIZ.length).fill(null);
-        scoreEl.textContent = "0";
+        scoreEl.textContent = "—"; // ✅ keep hidden until submit
 
         renderQuestions();
         quizCard.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -423,7 +423,7 @@
         }
 
         revealAll();
-        const score = updateScore();
+        const score = updateScore(); // ✅ score only calculated now
 
         try{
           await saveScore(name, score);
@@ -439,7 +439,7 @@
       resetBtn.addEventListener("click", () => {
         revealed = false;
         answers = new Array(QUIZ.length).fill(null);
-        scoreEl.textContent = "0";
+        scoreEl.textContent = "—"; // ✅ hidden again
         msg.textContent = "";
         msg.style.color = "";
         renderQuestions();
