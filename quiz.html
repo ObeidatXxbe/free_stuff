@@ -4,6 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>QR Safety Quiz</title>
+
+  <!-- ✅ Supabase JS (required for shared scoreboard) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     :root{
       --bg:#120205; --card:rgba(135,7,28,0.12); --card2:rgba(135,7,28,0.18);
@@ -42,6 +46,7 @@
       display:inline-block; padding:12px 18px; border-radius:12px; text-decoration:none;
       font-weight:800; color:var(--text);
       background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.14);
+      cursor:pointer;
     }
     .btn-ghost:hover{background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.22)}
     .q{
@@ -72,7 +77,7 @@
     <div class="top">
       <div>
         <h1>QR & Link Safety Quiz</h1>
-        <p class="muted">Nickname is only saved on this device (no login, no server).</p>
+        <p class="muted">Nickname only • Shared scoreboard (no login).</p>
       </div>
       <a class="btn-ghost" href="index.html">← Back</a>
     </div>
@@ -102,13 +107,18 @@
     </div>
 
     <div class="card">
-      <h2 style="margin:0 0 10px;color:var(--title2);">Local scoreboard</h2>
-      <p class="muted" style="margin:0;">This scoreboard is stored in your browser (per device). For a shared scoreboard, you’d need a backend.</p>
+      <h2 style="margin:0 0 10px;color:var(--title2);">Shared scoreboard</h2>
+      <p class="muted" style="margin:0;">Top 10 scores (shared for everyone).</p>
       <div id="board"></div>
     </div>
   </div>
 
   <script>
+    // ✅ Put your Supabase public keys here
+    const SUPABASE_URL = "https://fagdpkcckpyhmmgmaqik.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_w3_sZUpV1LsChEuJGVWRnw_NLk17WPs";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     // ---- Quiz questions (edit these freely) ----
     const QUIZ = [
       {
@@ -178,6 +188,12 @@
       return (s || "").trim().replace(/\s+/g," ").slice(0,18);
     }
 
+    function escapeHtml(s){
+      return (s || "").replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      })[c]);
+    }
+
     function renderQuestions(){
       questionsEl.innerHTML = "";
       QUIZ.forEach((item, i) => {
@@ -208,20 +224,16 @@
 
       answers[qIndex] = choice;
 
-      // Clear styles for this question
       container.querySelectorAll(".opt").forEach(b => {
         b.classList.remove("ok","bad","picked");
       });
 
-      // Neutral highlight for the chosen option
       btn.classList.add("picked");
 
-      // No explanation yet
       const exp = container.querySelector(`#exp-${qIndex}`);
       exp.textContent = "";
 
-      // Optional: keep live score counting (you can remove this if you want)
-      updateScore();
+      updateScore(); // optional live score
     }
 
     function updateScore(){
@@ -243,65 +255,64 @@
         const correct = item.correct;
         const chosen = answers[i];
 
-        // Reset styles
         opts.forEach(b => b.classList.remove("ok","bad","picked"));
 
-        // Highlight correct answer
         if(opts[correct]) opts[correct].classList.add("ok");
 
-        // Highlight user's wrong choice
         if(chosen !== null && chosen !== correct && opts[chosen]) {
           opts[chosen].classList.add("bad");
         }
 
-        // Show explanation
         exp.textContent = (chosen === correct ? "✅ " : "⚠️ ") + item.explain;
       });
     }
 
-    function loadBoard(){
-      const raw = localStorage.getItem("qr_quiz_scores");
-      let data = [];
-      try { data = raw ? JSON.parse(raw) : []; } catch(e){ data = []; }
+    // ✅ Shared scoreboard via Supabase
+    async function saveScore(name, score){
+      const { error } = await supabase
+        .from("scores")
+        .insert([{ name, score, total: QUIZ.length }]);
 
-      data.sort((a,b) => (b.score - a.score) || (b.time - a.time));
-      data = data.slice(0, 10);
+      if (error) throw error;
+    }
 
-      if(data.length === 0){
-        boardEl.innerHTML = `<p class="muted">No scores yet on this device. Finish the quiz to add one.</p>`;
+    async function loadBoard(){
+      boardEl.innerHTML = `<p class="muted">Loading leaderboard…</p>`;
+
+      const { data, error } = await supabase
+        .from("scores")
+        .select("name, score, total, created_at")
+        .order("score", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (error || !data) {
+        boardEl.innerHTML = `<p class="muted">Failed to load leaderboard.</p>`;
         return;
       }
 
-      const rows = data.map((x, idx) => `
+      if (data.length === 0) {
+        boardEl.innerHTML = `<p class="muted">No scores yet. Be the first 🙂</p>`;
+        return;
+      }
+
+      const rows = data.map((x, i) => `
         <tr>
-          <td>${idx+1}</td>
+          <td>${i + 1}</td>
           <td>${escapeHtml(x.name)}</td>
-          <td><b>${x.score}</b> / ${QUIZ.length}</td>
-          <td class="muted">${new Date(x.time).toLocaleString()}</td>
+          <td><b>${x.score}</b> / ${x.total}</td>
+          <td class="muted">${new Date(x.created_at).toLocaleString()}</td>
         </tr>
       `).join("");
 
       boardEl.innerHTML = `
         <table>
-          <thead><tr><th>#</th><th>Nickname</th><th>Score</th><th>When</th></tr></thead>
+          <thead>
+            <tr><th>#</th><th>Nickname</th><th>Score</th><th>When</th></tr>
+          </thead>
           <tbody>${rows}</tbody>
         </table>
       `;
-    }
-
-    function saveScore(name, score){
-      const raw = localStorage.getItem("qr_quiz_scores");
-      let data = [];
-      try { data = raw ? JSON.parse(raw) : []; } catch(e){ data = []; }
-
-      data.push({ name, score, time: Date.now() });
-      localStorage.setItem("qr_quiz_scores", JSON.stringify(data));
-    }
-
-    function escapeHtml(s){
-      return (s || "").replace(/[&<>"']/g, c => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-      })[c]);
     }
 
     startBtn.addEventListener("click", () => {
@@ -325,7 +336,7 @@
       quizCard.scrollIntoView({ behavior: "smooth", block: "start" });
     });
 
-    finishBtn.addEventListener("click", () => {
+    finishBtn.addEventListener("click", async () => {
       const name = sanitizeName(nameInput.value);
       if(!name){
         alert("Please enter a nickname.");
@@ -339,15 +350,19 @@
         return;
       }
 
-      // ✅ reveal answers only now
       revealAll();
 
       const score = updateScore();
-      saveScore(name, score);
-      loadBoard();
 
-      msg.textContent = `Saved! ${name} scored ${score}/${QUIZ.length}.`;
-      msg.style.color = "#4ade80";
+      try{
+        await saveScore(name, score);
+        await loadBoard();
+        msg.textContent = `Saved! ${name} scored ${score}/${QUIZ.length}.`;
+        msg.style.color = "#4ade80";
+      } catch(e){
+        msg.textContent = "Could not save score. (Check Supabase table/RLS policies.)";
+        msg.style.color = "#f87171";
+      }
     });
 
     resetBtn.addEventListener("click", () => {
@@ -359,6 +374,7 @@
       renderQuestions();
     });
 
+    // load shared leaderboard on page load
     loadBoard();
   </script>
 </body>
