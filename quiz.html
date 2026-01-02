@@ -220,7 +220,7 @@
         <button class="btn" id="startBtn">Start quiz</button>
       </div>
 
-      <img src="bunny.png" class="quiz-bunny" alt="Knight Bunny">
+      <img src="ARABI.png" class="quiz-bunny" alt="Knight Bunny">
     </div>
   </div>
 
@@ -238,7 +238,7 @@
 
   <!-- SCOREBOARD -->
   <div class="card">
-    <h2>Shared scoreboard</h2>
+    <h2>Scoreboard</h2>
     <p class="muted">Top 50 scores.</p>
     <div id="board"></div>
   </div>
@@ -317,7 +317,7 @@
       .select("*").order("score",{ascending:false}).limit(50);
 
     if(!data||!data.length){
-      boardEl.innerHTML="<p class='muted'>No scores yet.</p>";
+      boardEl.innerHTML="<p class='muted'>No scores yet.Be the first one😊</p>";
       return;
     }
 
