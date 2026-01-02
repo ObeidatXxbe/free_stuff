@@ -153,7 +153,7 @@
 
     <div class="card">
       <h2 style="margin:0 0 10px;color:var(--title2);">Shared scoreboard</h2>
-      <p class="muted" style="margin:0;">Top 10 scores.</p>
+      <p class="muted" style="margin:0;">Top 50 scores.</p>
       <div id="board"></div>
     </div>
   </div>
@@ -359,7 +359,7 @@
           .select("name, score, total, created_at")
           .order("score", { ascending: false })
           .order("created_at", { ascending: false })
-          .limit(10);
+          .limit(50);
 
         if (error || !data) {
           boardEl.innerHTML = `<p class="muted" style="color:#f87171;">Failed to load leaderboard.</p>`;
