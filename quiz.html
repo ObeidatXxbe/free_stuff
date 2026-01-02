@@ -41,7 +41,38 @@
       min-height:100vh;
     }
 
-    .top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    /* ✅ Header with bunny */
+    .top{
+      display:flex;
+      gap:16px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .top-left{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width: 240px;
+    }
+    .top-right{
+      display:flex;
+      gap:14px;
+      align-items:center;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+    }
+    .top-bunny{
+      width: 150px;            /* change this for bigger/smaller */
+      max-width: 100%;
+      height: auto;
+      border: none;
+      box-shadow: none;
+      filter: drop-shadow(0 0 22px rgba(135, 7, 28, 0.55));
+      user-select:none;
+      -webkit-user-drag:none;
+    }
+
     h1{margin:0;color:var(--title);font-size:clamp(1.7rem,3vw,2.3rem);line-height:1.15}
     p{margin:10px 0;color:var(--muted)}
     .card{
@@ -114,17 +145,26 @@
     table{width:100%; border-collapse:collapse; margin-top:10px}
     th,td{padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left}
     th{color:var(--title2); font-weight:800}
-    @media (max-width:640px){ .top{gap:8px} }
+
+    @media (max-width:640px){
+      .top{gap:10px}
+      .top-bunny{width:120px}
+    }
   </style>
 </head>
 
 <body>
   <div class="wrap">
     <div class="top">
-      <div>
+      <div class="top-left">
         <h1>QR & Link Safety Quiz</h1>
       </div>
-      <a class="btn-ghost" href="index.html">← Back</a>
+
+      <div class="top-right">
+        <!-- ✅ Put bunny.png in the same folder as quiz.html (or adjust the path) -->
+        <img src="bunny.png" alt="Knight Bunny" class="top-bunny">
+        <a class="btn-ghost" href="index.html">← Back</a>
+      </div>
     </div>
 
     <div class="card">
